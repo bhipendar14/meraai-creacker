@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeraAi - Checkers Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel: #1a1a1a;
+            --fg: #f8f8f8;
+            --muted: #888;
+            --accent: #ff6b35;
+            --accent-glow: rgba(255, 107, 53, 0.4);
+            --red-piece: #dc2626;
+            --black-piece: #1f2937;
+            --white-square: #f5f5f5;
+            --black-square: #2d2d2d;
+            --king-gold: #fbbf24;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--panel);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.1);
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .title {
+            font-size: 2.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #000000 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            transition: transform 0.2s;
+            user-select: none;
+            position: relative;
+        }
+        
+        .title::after {
+            content: '👑 MeraAi Checkers';
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: linear-gradient(135deg, #000000 0%, #ffffff 50%, #000000 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .title:hover {
+            transform: scale(1.05);
+        }
+        
+        .title:hover::after {
+            opacity: 1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+        }
+
+        button.secondary:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        select {
+            background: rgba(255,255,255,0.05);
+            color: var(--fg);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            font-size: 14px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 35px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff6b35' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        select option {
+            background: var(--panel);
+            color: var(--fg);
+            padding: 10px;
+        }
+
+        /* Game Area */
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .board-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .board-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+            background: #000;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .board {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 0;
+            border: 3px solid #444;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .square {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .square.white {
+            background: var(--white-square);
+        }
+
+        .square.black {
+            background: var(--black-square);
+        }
+
+        .square.selected {
+            background: rgba(255, 107, 53, 0.3) !important;
+            box-shadow: inset 0 0 20px var(--accent-glow);
+        }
+
+        .square.valid-move {
+            cursor: pointer;
+        }
+
+        .square.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* Pieces */
+        .piece {
+            width: 70%;
+            height: 70%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            font-size: 1.5em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .piece:hover {
+            transform: scale(1.1);
+        }
+
+        .piece.red {
+            background: radial-gradient(circle at 30% 30%, #ef4444, var(--red-piece));
+            border: 3px solid #991b1b;
+        }
+
+        .piece.black {
+            background: radial-gradient(circle at 30% 30%, #4b5563, var(--black-piece));
+            border: 3px solid #000;
+        }
+
+        .piece.king::before {
+            content: '♔';
+            color: var(--king-gold);
+            text-shadow: 0 0 10px var(--king-gold), 0 2px 4px rgba(0,0,0,0.5);
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .piece.can-move {
+            box-shadow: 0 0 20px var(--accent), 0 4px 8px rgba(0,0,0,0.4);
+            animation: highlight 1s infinite;
+        }
+
+        @keyframes highlight {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Side Panel */
+        .side-panel {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+        }
+
+        .turn-indicator {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 2px solid;
+            transition: all 0.3s;
+        }
+
+        .turn-indicator.red-turn {
+            border-color: var(--red-piece);
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .turn-indicator.black-turn {
+            border-color: var(--black-piece);
+            background: rgba(31, 41, 55, 0.2);
+        }
+
+        .turn-indicator h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: var(--muted);
+        }
+
+        .turn-indicator .player-name {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .turn-indicator.red-turn .player-name {
+            color: #ef4444;
+        }
+
+        .turn-indicator.black-turn .player-name {
+            color: #9ca3af;
+        }
+
+        /* Stats */
+        .stats {
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .stat-item.red {
+            border-left-color: var(--red-piece);
+        }
+
+        .stat-item.black {
+            border-left-color: var(--black-piece);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+
+        /* Move History */
+        .move-history {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .move-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .move-history::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+
+        .move-history::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        .move-history h4 {
+            margin-bottom: 10px;
+            color: var(--accent);
+            font-size: 1em;
+        }
+
+        .move-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            padding: 8px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.6;
+        }
+
+        .instructions li::before {
+            content: '▸';
+            color: var(--accent);
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+
+        /* Winner Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--panel);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            border: 3px solid var(--accent);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--king-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-content .winner-name {
+            font-size: 2em;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .modal-content .winner-name.red {
+            color: #ef4444;
+        }
+
+        .modal-content .winner-name.black {
+            color: #9ca3af;
+        }
+
+        .modal-content p {
+            color: var(--muted);
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* Player Names Input */
+        .player-inputs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            background: rgba(255,255,255,0.05);
+            color: var(--fg);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+
+            .side-panel {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .turn-indicator {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 2em;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls, .player-inputs {
+                flex-direction: column;
+            }
+
+            button, input, select {
+                width: 100%;
+            }
+
+            .board-wrapper {
+                padding: 10px;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+
+            .modal-content h2 {
+                font-size: 2em;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .side-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .piece {
+                width: 65%;
+                height: 65%;
+            }
+
+            .piece.king::before {
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 1.5em;
+            }
+
+            .game-area {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="title" id="titleBtn">👑 MeraAi Checkers</h1>
+            <div class="controls">
+                <div class="player-inputs">
+                    <input type="text" id="redPlayerName" placeholder="Red Player" value="Red Player">
+                    <input type="text" id="blackPlayerName" placeholder="Black Player" value="Black Player">
+                </div>
+                <select id="gameMode">
+                    <option value="pvp">Player vs Player</option>
+                    <option value="ai">Player vs AI</option>
+                </select>
+                <button id="newGameBtn">New Game</button>
+                <button id="undoBtn" class="secondary" disabled>Undo Move</button>
+            </div>
+        </header>
+
+        <div class="game-area">
+            <div class="board-container">
+                <div class="board-wrapper">
+                    <div class="board" id="board"></div>
+                </div>
+                <div class="instructions">
+                    <h3>🎮 How to Play</h3>
+                    <ul>
+                        <li>Click a piece to select it, then click a valid square to move</li>
+                        <li>Jump over opponent pieces to capture them</li>
+                        <li>Chain multiple jumps in one turn if possible</li>
+                        <li>Reach the opposite end to become a King (♔)</li>
+                        <li>Kings can move both forward and backward</li>
+                        <li>Capture all opponent pieces to win!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <aside class="side-panel">
+                <div class="turn-indicator red-turn" id="turnIndicator">
+                    <h3>Current Turn</h3>
+                    <div class="player-name" id="currentPlayer">Red Player</div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item red">
+                        <span class="stat-label" id="redPlayerLabel">Red Player</span>
+                        <span class="stat-value" id="redPieces">12</span>
+                    </div>
+                    <div class="stat-item black">
+                        <span class="stat-label" id="blackPlayerLabel">Black Player</span>
+                        <span class="stat-value" id="blackPieces">12</span>
+                    </div>
+                </div>
+
+                <div class="move-history">
+                    <h4>Move History</h4>
+                    <div id="moveList"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div class="modal" id="winnerModal">
+        <div class="modal-content">
+            <h2>🏆 Victory! 🏆</h2>
+            <div class="winner-name" id="winnerName">Red Player</div>
+            <p id="winnerMessage">Congratulations on your win!</p>
+            <button onclick="newGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const titleBtn = document.getElementById('titleBtn');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const gameModeSelect = document.getElementById('gameMode');
+        const redPlayerNameInput = document.getElementById('redPlayerName');
+        const blackPlayerNameInput = document.getElementById('blackPlayerName');
+        const turnIndicatorEl = document.getElementById('turnIndicator');
+        const currentPlayerEl = document.getElementById('currentPlayer');
+        const redPiecesEl = document.getElementById('redPieces');
+        const blackPiecesEl = document.getElementById('blackPieces');
+        const redPlayerLabelEl = document.getElementById('redPlayerLabel');
+        const blackPlayerLabelEl = document.getElementById('blackPlayerLabel');
+        const moveListEl = document.getElementById('moveList');
+        const winnerModal = document.getElementById('winnerModal');
+        const winnerNameEl = document.getElementById('winnerName');
+        const winnerMessageEl = document.getElementById('winnerMessage');
+
+        // Game State
+        let board = [];
+        let currentTurn = 'red';
+        let selectedPiece = null;
+        let validMoves = [];
+        let moveHistory = [];
+        let gameOver = false;
+        let mustCapture = false;
+        let chainCapture = false;
+
+        // YouTube Link
+        titleBtn.addEventListener('click', () => {
+            window.open('https://www.youtube.com/@MeraAi', '_blank');
+        });
+
+        // Initialize Board
+        function initBoard() {
+            board = [];
+            for (let row = 0; row < 8; row++) {
+                board[row] = [];
+                for (let col = 0; col < 8; col++) {
+                    if ((row + col) % 2 === 1) {
+                        if (row < 3) {
+                            board[row][col] = { color: 'black', king: false };
+                        } else if (row > 4) {
+                            board[row][col] = { color: 'red', king: false };
+                        } else {
+                            board[row][col] = null;
+                        }
+                    } else {
+                        board[row][col] = null;
+                    }
+                }
+            }
+            currentTurn = 'red';
+            selectedPiece = null;
+            validMoves = [];
+            moveHistory = [];
+            gameOver = false;
+            mustCapture = false;
+            chainCapture = false;
+            renderBoard();
+            updateUI();
+        }
+
+        // Render Board
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+
+                    if (board[row][col]) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${board[row][col].color}`;
+                        if (board[row][col].king) {
+                            piece.classList.add('king');
+                        }
+                        piece.dataset.row = row;
+                        piece.dataset.col = col;
+                        square.appendChild(piece);
+                    }
+
+                    square.addEventListener('click', handleSquareClick);
+                    boardEl.appendChild(square);
+                }
+            }
+        }
+
+        // Handle Square Click
+        function handleSquareClick(e) {
+            if (gameOver) return;
+            if (gameModeSelect.value === 'ai' && currentTurn === 'black') return;
+
+            const square = e.target.closest('.square');
+            const piece = e.target.closest('.piece');
+            const row = parseInt(square.dataset.row);
+            const col = parseInt(square.dataset.col);
+
+            // If clicking a piece
+            if (piece && board[row][col] && board[row][col].color === currentTurn) {
+                if (chainCapture && selectedPiece && 
+                    (selectedPiece.row !== row || selectedPiece.col !== col)) {
+                    return; // Must continue chain capture
+                }
+                selectPiece(row, col);
+            }
+            // If clicking a valid move
+            else if (selectedPiece && isValidMoveSquare(row, col)) {
+                makeMove(row, col);
+            }
+        }
+
+        // Select Piece
+        function selectPiece(row, col) {
+            selectedPiece = { row, col };
+            validMoves = getValidMoves(row, col);
+            
+            // Clear previous selection
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('selected', 'valid-move');
+            });
+
+            // Highlight selected and valid moves
+            const selectedSquare = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+            selectedSquare.classList.add('selected');
+
+            validMoves.forEach(move => {
+                const square = document.querySelector(`.square[data-row="${move.row}"][data-col="${move.col}"]`);
+                square.classList.add('valid-move');
+            });
+
+            // Highlight movable pieces
+            highlightMovablePieces();
+        }
+
+        // Get Valid Moves
+        function getValidMoves(row, col) {
+            const piece = board[row][col];
+            if (!piece) return [];
+
+            const moves = [];
+            const captures = [];
+
+            // Determine directions
+            const directions = piece.king ? [-1, 1] : (piece.color === 'red' ? [-1] : [1]);
+
+            // Check for captures first
+            directions.forEach(rowDir => {
+                [-1, 1].forEach(colDir => {
+                    const jumpRow = row + rowDir * 2;
+                    const jumpCol = col + colDir * 2;
+                    const midRow = row + rowDir;
+                    const midCol = col + colDir;
+
+                    if (isValidSquare(jumpRow, jumpCol) && !board[jumpRow][jumpCol] &&
+                        board[midRow][midCol] && board[midRow][midCol].color !== piece.color) {
+                        captures.push({ row: jumpRow, col: jumpCol, captured: { row: midRow, col: midCol } });
+                    }
+                });
+            });
+
+            // If captures available, only return captures
+            if (captures.length > 0) {
+                return captures;
+            }
+
+            // If in chain capture mode, must continue capturing
+            if (chainCapture) {
+                return [];
+            }
+
+            // If must capture globally, return empty
+            if (mustCapture) {
+                return [];
+            }
+
+            // Regular moves
+            directions.forEach(rowDir => {
+                [-1, 1].forEach(colDir => {
+                    const newRow = row + rowDir;
+                    const newCol = col + colDir;
+
+                    if (isValidSquare(newRow, newCol) && !board[newRow][newCol]) {
+                        moves.push({ row: newRow, col: newCol });
+                    }
+                });
+            });
+
+            return moves;
+        }
+
+        // Check if square is valid
+        function isValidSquare(row, col) {
+            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        // Check if move square is valid
+        function isValidMoveSquare(row, col) {
+            return validMoves.some(move => move.row === row && move.col === col);
+        }
+
+        // Make Move
+        function makeMove(row, col) {
+            const move = validMoves.find(m => m.row === row && m.col === col);
+            if (!move) return;
+
+            const fromRow = selectedPiece.row;
+            const fromCol = selectedPiece.col;
+            const piece = board[fromRow][fromCol];
+
+            // Move piece
+            board[row][col] = piece;
+            board[fromRow][fromCol] = null;
+
+            let captured = false;
+            // Handle capture
+            if (move.captured) {
+                board[move.captured.row][move.captured.col] = null;
+                captured = true;
+                
+                // Check for chain captures
+                const chainMoves = getValidMoves(row, col);
+                if (chainMoves.length > 0 && chainMoves[0].captured) {
+                    chainCapture = true;
+                    selectedPiece = { row, col };
+                    validMoves = chainMoves;
+                    renderBoard();
+                    highlightChainCapture(row, col);
+                    return;
+                }
+            }
+
+            // Promote to king
+            if ((piece.color === 'red' && row === 0) || (piece.color === 'black' && row === 7)) {
+                piece.king = true;
+            }
+
+            // Record move
+            const playerName = currentTurn === 'red' ? getRedPlayerName() : getBlackPlayerName();
+            const moveText = `${playerName}: ${String.fromCharCode(65 + fromCol)}${8 - fromRow} → ${String.fromCharCode(65 + col)}${8 - row}${captured ? ' (Capture!)' : ''}${piece.king ? ' 👑' : ''}`;
+            moveHistory.unshift(moveText);
+            if (moveHistory.length > 10) moveHistory.pop();
+
+            // Clear selection
+            selectedPiece = null;
+            validMoves = [];
+            chainCapture = false;
+
+            // Switch turn
+            currentTurn = currentTurn === 'red' ? 'black' : 'red';
+
+            // Update
+            renderBoard();
+            updateUI();
+            checkWinner();
+
+            // AI Move
+            if (gameModeSelect.value === 'ai' && currentTurn === 'black' && !gameOver) {
+                setTimeout(makeAIMove, 800);
+            }
+        }
+
+        // Highlight chain capture
+        function highlightChainCapture(row, col) {
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('selected', 'valid-move');
+            });
+
+            const selectedSquare = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+            selectedSquare.classList.add('selected');
+
+            validMoves.forEach(move => {
+                const square = document.querySelector(`.square[data-row="${move.row}"][data-col="${move.col}"]`);
+                square.classList.add('valid-move');
+            });
+        }
+
+        // Highlight movable pieces
+        function highlightMovablePieces() {
+            document.querySelectorAll('.piece').forEach(piece => {
+                piece.classList.remove('can-move');
+            });
+
+            // Check if any piece must capture
+            mustCapture = false;
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col] && board[row][col].color === currentTurn) {
+                        const moves = getValidMoves(row, col);
+                        if (moves.length > 0 && moves[0].captured) {
+                            mustCapture = true;
+                            break;
+                        }
+                    }
+                }
+                if (mustCapture) break;
+            }
+
+            // Highlight pieces that can move
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col] && board[row][col].color === currentTurn) {
+                        const moves = getValidMoves(row, col);
+                        if (moves.length > 0) {
+                            const piece = document.querySelector(`.piece[data-row="${row}"][data-col="${col}"]`);
+                            if (piece && !chainCapture) {
+                                piece.classList.add('can-move');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // AI Move
+        function makeAIMove() {
+            const allMoves = getAllPossibleMoves('black');
+            if (allMoves.length === 0) return;
+
+            // Prioritize captures
+            const captureMoves = allMoves.filter(m => m.move.captured);
+            const movesToConsider = captureMoves.length > 0 ? captureMoves : allMoves;
+
+            // Choose random move (simple AI)
+            const randomMove = movesToConsider[Math.floor(Math.random() * movesToConsider.length)];
+            
+            selectPiece(randomMove.row, randomMove.col);
+            setTimeout(() => {
+                makeMove(randomMove.move.row, randomMove.move.col);
+            }, 500);
+        }
+
+        // Get all possible moves for a color
+        function getAllPossibleMoves(color) {
+            const moves = [];
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col] && board[row][col].color === color) {
+                        const pieceMoves = getValidMoves(row, col);
+                        pieceMoves.forEach(move => {
+                            moves.push({ row, col, move });
+                        });
+                    }
+                }
+            }
+            return moves;
+        }
+
+        // Update UI
+        function updateUI() {
+            const redName = getRedPlayerName();
+            const blackName = getBlackPlayerName();
+            
+            currentPlayerEl.textContent = currentTurn === 'red' ? redName : blackName;
+            turnIndicatorEl.className = `turn-indicator ${currentTurn}-turn`;
+            
+            // Count pieces
+            let redCount = 0;
+            let blackCount = 0;
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col]) {
+                        if (board[row][col].color === 'red') redCount++;
+                        else blackCount++;
+                    }
+                }
+            }
+            
+            redPiecesEl.textContent = redCount;
+            blackPiecesEl.textContent = blackCount;
+            redPlayerLabelEl.textContent = redName;
+            blackPlayerLabelEl.textContent = blackName;
+
+            // Update move history
+            moveListEl.innerHTML = moveHistory.map(move => 
+                `<div class="move-item">${move}</div>`
+            ).join('');
+
+            // Update undo button
+            undoBtn.disabled = moveHistory.length === 0;
+
+            // Highlight movable pieces
+            if (!chainCapture) {
+                highlightMovablePieces();
+            }
+        }
+
+        // Check Winner
+        function checkWinner() {
+            let redCount = 0;
+            let blackCount = 0;
+            let redCanMove = false;
+            let blackCanMove = false;
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (board[row][col]) {
+                        if (board[row][col].color === 'red') {
+                            redCount++;
+                            if (getValidMoves(row, col).length > 0) redCanMove = true;
+                        } else {
+                            blackCount++;
+                            if (getValidMoves(row, col).length > 0) blackCanMove = true;
+                        }
+                    }
+                }
+            }
+
+            let winner = null;
+            if (redCount === 0 || !redCanMove) {
+                winner = 'black';
+            } else if (blackCount === 0 || !blackCanMove) {
+                winner = 'red';
+            }
+
+            if (winner) {
+                gameOver = true;
+                setTimeout(() => showWinner(winner), 500);
+            }
+        }
+
+        // Show Winner
+        function showWinner(winner) {
+            const winnerName = winner === 'red' ? getRedPlayerName() : getBlackPlayerName();
+            winnerNameEl.textContent = winnerName;
+            winnerNameEl.className = `winner-name ${winner}`;
+            
+            if (winner === 'red') {
+                winnerMessageEl.textContent = '🔴 Red pieces dominate the board!';
+            } else {
+                winnerMessageEl.textContent = '⚫ Black pieces claim victory!';
+            }
+            
+            winnerModal.classList.add('show');
+        }
+
+        // Get Player Names
+        function getRedPlayerName() {
+            return redPlayerNameInput.value.trim() || 'Red Player';
+        }
+
+        function getBlackPlayerName() {
+            return blackPlayerNameInput.value.trim() || 'Black Player';
+        }
+
+        // New Game
+        function newGame() {
+            winnerModal.classList.remove('show');
+            initBoard();
+        }
+
+        // Event Listeners
+        newGameBtn.addEventListener('click', newGame);
+        
+        undoBtn.addEventListener('click', () => {
+            // Simple undo - restart game (could be enhanced to track full game state)
+            if (confirm('Undo is not available yet. Start a new game?')) {
+                newGame();
+            }
+        });
+
+        redPlayerNameInput.addEventListener('change', updateUI);
+        blackPlayerNameInput.addEventListener('change', updateUI);
+
+        // Initialize
+        initBoard();
+    </script>
+</body>
+</html>
